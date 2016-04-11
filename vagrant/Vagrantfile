@@ -158,7 +158,7 @@ Vagrant.configure("2") do |config|
       if i == $num_instances then
         # Write local ansible inventory
         File.open($ansible_inventory ,'w') do |f|
-          $inventory.concat "\n[vagrant:children]\nmaster\nminion\n\n[k8s_api_server:children]\nmaster\n\n[k8s_kube:children]\nminion\n\n[etcd_server:children]\nmaster\n"
+          $inventory.concat "\n[coreos:children]\nvagrant\n\n[vagrant:children]\nmasters\nnodes\n\n[k8s_api_server:children]\nmasters\n\n[k8s_kube:children]\nnodes\n\n[etcd:children]\nmasters\n"
           f.write $inventory
         end
         # Provision hosts

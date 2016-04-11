@@ -1,11 +1,81 @@
 ---
-# Install python
-- hosts: all
-  gather_facts: False
-  roles:
-    - defunctzombie.coreos-bootstrap
+# This playbook deploys a kubernetes cluster 
+# with the default addons.
 
-# Install core stuff
 - hosts: all
+  gather_facts: false
+  sudo: yes
   roles:
-    - core
+    - pre-ansible
+  tags:
+    - pre-ansible
+
+# Install etcd
+- hosts: etcd
+  sudo: yes
+  roles:
+    - etcd
+  tags:
+    - etcd
+
+- hosts: all
+  sudo: yes
+  roles:
+    - common
+    - docker
+  tags:
+    - docker
+
+# install flannel
+- hosts:
+    - etcd
+    - masters
+    - nodes
+  sudo: yes
+  roles:
+    - { role: flannel, when: networking == 'flannel' }
+  tags:
+    - network-service-install
+
+# install opencontrail
+- hosts: all
+  sudo: yes
+  roles:
+    - { role: opencontrail, when: networking == 'opencontrail'}
+  tags:
+    - network-service-install
+
+# install kube master services
+- hosts: masters
+  sudo: yes
+  roles:
+    - master
+  tags:
+    - masters
+
+# launch addons, like dns
+- hosts: masters
+  sudo: yes
+  roles:
+    - kubernetes-addons
+  tags:
+    - addons
+    - dns
+
+# install kubernetes on the nodes
+- hosts: nodes
+  sudo: yes
+  roles:
+    - node
+  tags:
+    - nodes
+
+# provision opencontrail once the services are operational
+- hosts:
+    - masters[0]
+    - nodes
+  sudo: yes
+  roles:
+    - { role: opencontrail-provision, when: networking == 'opencontrail' }
+  tags:
+    - network-service-config
